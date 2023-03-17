@@ -109,6 +109,8 @@ class LockManager {
 
   /** Lock table for lock requests. */
   std::unordered_map<RID, LockRequestQueue> lock_table_;
+  bool NeedWait(Transaction *txn, LockRequestQueue *lock_queue);
+  bool UpdateWait(Transaction *txn, LockRequestQueue* lock_queue);
 };
 
 }  // namespace bustub

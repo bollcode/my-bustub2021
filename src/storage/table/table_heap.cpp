@@ -49,6 +49,10 @@ bool TableHeap::InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn) {
   }
 
   cur_page->WLatch();
+  /**
+   * 下面是将一个元组插入到指定的page中，如果这个page还有空间，就直接插入到在这页面里面，如果没有则在下一个页找，如果
+   * 所有的页面都满了，那么我们就重新创建一个页进行插入
+   */
   // Insert into the first page with enough space. If no such page exists, create a new page and insert into that.
   // INVARIANT: cur_page is WLatched if you leave the loop normally.
   while (!cur_page->InsertTuple(tuple, rid, txn, lock_manager_, log_manager_)) {

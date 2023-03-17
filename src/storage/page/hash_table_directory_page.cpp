@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include "common/logger.h"
-
+#include "storage/page/hash_table_bucket_page.h"
 namespace bustub {
 page_id_t HashTableDirectoryPage::GetPageId() const { return page_id_; }
 
@@ -26,29 +26,98 @@ void HashTableDirectoryPage::SetLSN(lsn_t lsn) { lsn_ = lsn; }
 
 uint32_t HashTableDirectoryPage::GetGlobalDepth() { return global_depth_; }
 
-uint32_t HashTableDirectoryPage::GetGlobalDepthMask() { return 0; }
+/**
+ * 获取GlobalDepth的掩码，就是GlobalDepth个1
+ * 1->1   2->11  3-> 111
+ */
+uint32_t HashTableDirectoryPage::GetGlobalDepthMask() {
+  return (1 << global_depth_) -1;
+}
 
-void HashTableDirectoryPage::IncrGlobalDepth() {}
+uint32_t HashTableDirectoryPage::GetLocalDepthMask(uint32_t bucket_idx) {
+  uint8_t localdepth = local_depths_[bucket_idx];
+  return (1<< localdepth) -1;
+}
+/**
+ * 给directory 的global depth 加1，也就是grow，将原来的桶的索引的个数增加一倍
+ * 增加一倍后，然后将之前的数都复制到新拓展的索引中
+ */
+void HashTableDirectoryPage::IncrGlobalDepth() {
+  // assert(global_depth_ < MAX_BUCKET_DEPTH);
+  int new_start_depth = 1 << global_depth_;
+  int old = new_start_depth;
+
+  for (int i = 0; i < old; i++, new_start_depth++) {
+    bucket_page_ids_[new_start_depth] = bucket_page_ids_[i];
+    // 这个是将directory 扩容后加入，将新拓展的地方依然指向同一个bucket；例如00 和10指向同一个
+    // 将桶信息复制到新拓展的地方
+    local_depths_[new_start_depth] = local_depths_[i];
+  }
+  global_depth_++;
+  return;
+}
 
 void HashTableDirectoryPage::DecrGlobalDepth() { global_depth_--; }
 
-page_id_t HashTableDirectoryPage::GetBucketPageId(uint32_t bucket_idx) { return 0; }
+page_id_t HashTableDirectoryPage::GetBucketPageId(uint32_t bucket_idx) {
+  return bucket_page_ids_[bucket_idx];
+}
 
-void HashTableDirectoryPage::SetBucketPageId(uint32_t bucket_idx, page_id_t bucket_page_id) {}
+void HashTableDirectoryPage::SetBucketPageId(uint32_t bucket_idx, page_id_t bucket_page_id) {
+  bucket_page_ids_[bucket_idx] = bucket_page_id;
+}
 
-uint32_t HashTableDirectoryPage::Size() { return 0; }
+uint32_t HashTableDirectoryPage::Size() {
+  return 1 << global_depth_;
+}
 
-bool HashTableDirectoryPage::CanShrink() { return false; }
+/**
+ * 只有当所有的localdepth都小于 globaldepth时，才可以缩容
+ */
+bool HashTableDirectoryPage::CanShrink() {
+  for (uint32_t i = 0; i < Size(); i++) {
+    uint32_t localdepth = local_depths_[i];
+    if (localdepth == global_depth_) {
+      return false;
+    }
+  }
+  return true;
+}
 
-uint32_t HashTableDirectoryPage::GetLocalDepth(uint32_t bucket_idx) { return 0; }
+uint32_t HashTableDirectoryPage::GetLocalDepth(uint32_t bucket_idx) {
+  // assert(local_depth <= global_depth_);
+  return local_depths_[bucket_idx];
+}
 
-void HashTableDirectoryPage::SetLocalDepth(uint32_t bucket_idx, uint8_t local_depth) {}
+void HashTableDirectoryPage::SetLocalDepth(uint32_t bucket_idx, uint8_t local_depth) {
+  local_depths_[bucket_idx] = local_depth;
+}
 
-void HashTableDirectoryPage::IncrLocalDepth(uint32_t bucket_idx) {}
+void HashTableDirectoryPage::IncrLocalDepth(uint32_t bucket_idx) {
+  // uint32_t localdepth = local_depths_[bucket_idx];
+  // if(localdepth == global_depth_){
+  //   IncrGlobalDepth();
+  // }
+  // local_depths_[bucket_idx]++;
+  local_depths_[bucket_idx]++;
+  assert(local_depths_[bucket_idx] <= global_depth_);
+}
 
-void HashTableDirectoryPage::DecrLocalDepth(uint32_t bucket_idx) {}
-
-uint32_t HashTableDirectoryPage::GetLocalHighBit(uint32_t bucket_idx) { return 0; }
+void HashTableDirectoryPage::DecrLocalDepth(uint32_t bucket_idx) {
+  local_depths_[bucket_idx]--;
+}
+/**
+ * 他的作用是获取兄弟bucket的bucket_idx(也就是所谓的splitImage), 也就是说,
+ * 我们要将传入的bucket_idx的local_depth的最高位取反后返回
+ * 在extendible hash index中，当插入导致bucket分裂或者移除导致bucket合并时，
+ * 我们都要找到待分离或合并的bucket的另一半。
+ * https://www.cnblogs.com/huasyuan/p/16611858.html
+ */
+uint32_t HashTableDirectoryPage::GetSplitImageIndex(uint32_t bucket_idx) {
+  // 合并时找另一半
+  uint32_t local_depth = local_depths_[bucket_idx];
+  return bucket_idx ^ (1 << (local_depth - 1));
+}
 
 /**
  * VerifyIntegrity - Use this for debugging but **DO NOT CHANGE**

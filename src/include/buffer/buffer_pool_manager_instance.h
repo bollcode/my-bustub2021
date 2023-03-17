@@ -131,7 +131,7 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   std::atomic<page_id_t> next_page_id_ = instance_index_;
 
   /** Array of buffer pool pages. */
-  Page *pages_;
+  Page *pages_;  // 这个才是真正的page缓存数组
   /** Pointer to the disk manager. */
   DiskManager *disk_manager_ __attribute__((__unused__));
   /** Pointer to the log manager. */
@@ -141,7 +141,7 @@ class BufferPoolManagerInstance : public BufferPoolManager {
   /** Replacer to find unpinned pages for replacement. */
   Replacer *replacer_;
   /** List of free pages. */
-  std::list<frame_id_t> free_list_;
+  std::list<frame_id_t> free_list_;  // 表示没有被占用的frame_id
   /** This latch protects shared data structures. We recommend updating this comment to describe what it protects. */
   std::mutex latch_;
 };

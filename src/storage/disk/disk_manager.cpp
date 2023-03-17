@@ -112,6 +112,7 @@ void DiskManager::ReadPage(page_id_t page_id, char *page_data) {
     // std::cerr << "I/O error while reading" << std::endl;
   } else {
     // set read cursor to offset
+    // printf("offset = %d\n", offset);
     db_io_.seekp(offset);
     db_io_.read(page_data, PAGE_SIZE);
     if (db_io_.bad()) {

@@ -13,9 +13,10 @@
 #pragma once
 
 #include <atomic>
-#include <shared_mutex>
+
 #include <unordered_map>
 #include <unordered_set>
+#include <shared_mutex>
 
 #include "common/config.h"
 #include "concurrency/lock_manager.h"
@@ -61,7 +62,7 @@ class TransactionManager {
 
   /** The transaction map is a global list of all the running transactions in the system. */
   static std::unordered_map<txn_id_t, Transaction *> txn_map;
-  static std::shared_mutex txn_map_mutex;
+  static std::shared_timed_mutex txn_map_mutex;
 
   /**
    * Locates and returns the transaction with the given transaction ID.
@@ -102,7 +103,7 @@ class TransactionManager {
   }
 
   std::atomic<txn_id_t> next_txn_id_{0};
-  LockManager *lock_manager_ __attribute__((__unused__));
+  LockManager *lock_manager_ __attribute__((__unused__));  // 指向这个lock_manager
   LogManager *log_manager_ __attribute__((__unused__));
 
   /** The global transaction latch is used for checkpointing. */

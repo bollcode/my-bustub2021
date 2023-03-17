@@ -20,6 +20,7 @@
 #include "storage/index/generic_key.h"
 #include "storage/page/hash_table_page_defs.h"
 
+#define MAX_BUCKET_DEPTH  9
 namespace bustub {
 
 /**
@@ -169,8 +170,7 @@ class HashTableDirectoryPage {
    * @param bucket_idx bucket index to lookup
    * @return the high bit corresponding to the bucket's local depth
    */
-  uint32_t GetLocalHighBit(uint32_t bucket_idx);
-
+  // uint32_t GetLocalHighBit(uint32_t bucket_idx);
   /**
    * VerifyIntegrity
    *
@@ -187,11 +187,11 @@ class HashTableDirectoryPage {
   void PrintDirectory();
 
  private:
-  page_id_t page_id_;
+  page_id_t page_id_;  // self page id
   lsn_t lsn_;
-  uint32_t global_depth_{0};
-  uint8_t local_depths_[DIRECTORY_ARRAY_SIZE];
-  page_id_t bucket_page_ids_[DIRECTORY_ARRAY_SIZE];
+  uint32_t global_depth_{0};  // Global depth of dirctory
+  uint8_t local_depths_[DIRECTORY_ARRAY_SIZE];  // Array of local depths for each bucket (uint8)
+  page_id_t bucket_page_ids_[DIRECTORY_ARRAY_SIZE];  // Array of bucket page_id_t
 };
 
 }  // namespace bustub

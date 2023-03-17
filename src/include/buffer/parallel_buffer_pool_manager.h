@@ -23,8 +23,8 @@ class ParallelBufferPoolManager : public BufferPoolManager {
  public:
   /**
    * Creates a new ParallelBufferPoolManager.
-   * @param the number of individual BufferPoolManagerInstances to store
-   * @param pool_size the pool size of each BufferPoolManagerInstance
+   * @param the number of individual BufferPoolManagerInstances to store // 几个bufferpool
+   * @param pool_size the pool size of each BufferPoolManagerInstance    
    * @param disk_manager the disk manager
    * @param log_manager the log manager (for testing only: nullptr = disable logging)
    */
@@ -86,5 +86,12 @@ class ParallelBufferPoolManager : public BufferPoolManager {
    * Flushes all the pages in the buffer pool to disk.
    */
   void FlushAllPgsImp() override;
+
+ private:
+  BufferPoolManager **managers_;
+  size_t num_instances_;
+  size_t pool_size_;
+  std::mutex latch_;
+  size_t next_instance_;
 };
 }  // namespace bustub

@@ -59,7 +59,7 @@ bool TablePage::InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn, Lock
   }
 
   // Otherwise we claim available free space..
-  SetFreeSpacePointer(GetFreeSpacePointer() - tuple.size_);
+  SetFreeSpacePointer(GetFreeSpacePointer() - tuple.size_);  // 获取要插入的地方（指针）
   memcpy(GetData() + GetFreeSpacePointer(), tuple.data_, tuple.size_);
 
   // Set the tuple.
